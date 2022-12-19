@@ -12,6 +12,14 @@ impl ChessPoint {
         ChessPoint { x, y }
     }
 
+    pub fn x(&self) -> u8 {
+        self.x
+    }
+
+    pub fn y(&self) -> u8 {
+        self.y
+    }
+
     pub fn set_x(&mut self, x: u8) {
         if !validate_bounds(x, self.y) {
             panic!("Invalid point coordinates on point X-position update: ({}, {})", x, self.y);
