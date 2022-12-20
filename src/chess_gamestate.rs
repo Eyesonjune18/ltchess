@@ -80,7 +80,8 @@ impl ChessGamestate {
     }
 
     pub fn move_piece(&mut self, requested_move: ChessMove) {
-        self.board.pieces[requested_move.to.y() as usize][requested_move.to.x() as usize] = self.board.pieces[requested_move.from.y() as usize][requested_move.from.x() as usize];
+        self.board.pieces[requested_move.to.y()][requested_move.to.x()] = self.board.pieces[requested_move.from.y()][requested_move.from.x()];
+        self.board.pieces[requested_move.from.y()][requested_move.from.x()] = None;
     }
 
     pub fn print_board(&self) {
