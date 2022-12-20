@@ -2,8 +2,8 @@ use crate::ChessPoint;
 
 #[allow(dead_code)]
 pub struct ChessMove {
-    pub from: ChessPoint,
-    pub to: ChessPoint,
+    source: ChessPoint,
+    destination: ChessPoint,
 }
 
 pub struct MoveValidity {
@@ -13,7 +13,7 @@ pub struct MoveValidity {
 
 impl ChessMove {
     pub fn new(from: ChessPoint, to: ChessPoint) -> Self {
-        ChessMove { from, to }
+        ChessMove { source: from, destination: to }
     }
 
     // Parse a move from a combined algebraic position string, like "e2 e4"
@@ -28,5 +28,13 @@ impl ChessMove {
         let to_point = ChessPoint::from(to);
 
         ChessMove::new(from_point, to_point)
+    }
+
+    pub fn source(&self) -> &ChessPoint {
+        &self.source
+    }
+
+    pub fn destination(&self) -> &ChessPoint {
+        &self.destination
     }
 }
