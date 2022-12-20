@@ -6,6 +6,11 @@ pub struct ChessMove {
     to: ChessPoint,
 }
 
+pub struct MoveValidity {
+    pub standard: bool,
+    pub capture: bool,
+}
+
 impl ChessMove {
     pub fn new(from: ChessPoint, to: ChessPoint) -> Self {
         ChessMove { from, to }
