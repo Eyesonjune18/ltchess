@@ -1,20 +1,27 @@
-use crate::ChessPiece;
 use crate::ChessMove;
+use crate::ChessPiece;
 use crate::ChessPieceColor;
 use crate::ChessPieceKind;
 use crate::ChessPoint;
 
 pub struct ChessGamestate {
+    // The array of pieces on the board
     pub board: ChessBoard,
+    // The color of the player whose turn it is
     pub turn: ChessPieceColor,
+    // The current position of each king
     pub white_king: ChessPoint,
     pub black_king: ChessPoint,
+    // Castling rights for each side
     pub white_castle_kingside: bool,
     pub white_castle_queenside: bool,
     pub black_castle_kingside: bool,
     pub black_castle_queenside: bool,
+    // The square where a pawn can be en passant-captured, if there is one
     pub en_passant: Option<ChessPoint>,
+    // Moves since the last capture or pawn move
     pub halfmove_clock: u32,
+    // Total number of moves in the game
     pub fullmove_clock: u32,
 }
 
@@ -23,9 +30,10 @@ pub struct ChessBoard {
 }
 
 impl ChessBoard {
+    // Creates a board from the default starting position
     fn new() -> Self {
-        use ChessPieceKind::*;
         use ChessPieceColor::*;
+        use ChessPieceKind::*;
 
         const EMPTY_ROW: [Option<ChessPiece>; 8] = [None; 8];
 
@@ -40,7 +48,8 @@ impl ChessBoard {
                     ChessPiece::new(Bishop, White),
                     ChessPiece::new(Knight, White),
                     ChessPiece::new(Rook, White),
-                ].map(Some),
+                ]
+                .map(Some),
                 [ChessPiece::new(Pawn, White); 8].map(Some),
                 EMPTY_ROW,
                 EMPTY_ROW,
@@ -56,13 +65,20 @@ impl ChessBoard {
                     ChessPiece::new(Bishop, Black),
                     ChessPiece::new(Knight, Black),
                     ChessPiece::new(Rook, Black),
-                ].map(Some),
+                ]
+                .map(Some),
             ],
         }
+    }
+
+    // Returns the piece at a given point, if there is one
+    pub fn piece_at(&self, point: &ChessPoint) -> Option<&ChessPiece> {
+        self.pieces[point.y()][point.x()].as_ref()
     }
 }
 
 impl ChessGamestate {
+    // Creates a gamestate from the default starting position
     pub fn new() -> Self {
         ChessGamestate {
             board: ChessBoard::new(),
@@ -79,11 +95,14 @@ impl ChessGamestate {
         }
     }
 
+    // Moves a piece from one square to another, without checking if the move is legal
     pub fn move_piece(&mut self, requested_move: ChessMove) {
-        self.board.pieces[requested_move.to.y()][requested_move.to.x()] = self.board.pieces[requested_move.from.y()][requested_move.from.x()];
-        self.board.pieces[requested_move.from.y()][requested_move.from.x()] = None;
+        self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] =
+            self.board.pieces[requested_move.source().y()][requested_move.source().x()];
+        self.board.pieces[requested_move.source().y()][requested_move.source().x()] = None;
     }
 
+    // TODO: Probably move this to UI
     pub fn print_board(&self) {
         for row in self.board.pieces.iter().rev() {
             for piece in row.iter() {
