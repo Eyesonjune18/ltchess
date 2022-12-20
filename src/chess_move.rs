@@ -2,8 +2,8 @@ use crate::ChessPoint;
 
 #[allow(dead_code)]
 pub struct ChessMove {
-    from: ChessPoint,
-    to: ChessPoint,
+    pub from: ChessPoint,
+    pub to: ChessPoint,
 }
 
 pub struct MoveValidity {
