@@ -7,8 +7,8 @@ pub use chess_gamestate::ChessGamestate;
 pub use chess_move::ChessMove;
 pub use chess_move::MoveValidity;
 pub use chess_piece::ChessPiece;
-pub use chess_piece::ChessPieceKind;
 pub use chess_piece::ChessPieceColor;
+pub use chess_piece::ChessPieceKind;
 pub use chess_point::ChessPoint;
 
 use std::io::Write;
@@ -27,6 +27,11 @@ fn main() {
         std::io::stdin().read_line(&mut user_inputted_move).unwrap();
         let move_to_make = ChessMove::from(&user_inputted_move);
 
+        if game.board.piece_at(move_to_make.source()).unwrap().can_make_move(&move_to_make).standard {
+            print("Move is invalid for that piece.\n");
+            continue;
+        }
+        
         clear();
 
         game.move_piece(move_to_make);
