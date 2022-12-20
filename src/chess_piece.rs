@@ -69,7 +69,6 @@ impl ChessPiece {
         let diagonal_pattern = change_in_x == change_in_y;
 
         use ChessPieceKind::*;
-        use ChessPieceColor::*;
 
         match self.kind {
             Pawn => {
