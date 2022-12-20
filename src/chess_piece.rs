@@ -1,14 +1,14 @@
 use crate::ChessMove;
 use crate::MoveValidity;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ChessPiece {
     pub kind: ChessPieceKind,
     pub color: ChessPieceColor,
     pub move_count: u32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ChessPieceKind {
     Pawn,
     Rook,
@@ -18,7 +18,7 @@ pub enum ChessPieceKind {
     King,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ChessPieceColor {
     White,
     Black,
@@ -59,6 +59,11 @@ impl ChessPiece {
         let change_in_x: u32 = (queried_move.destination().x() as i32 - queried_move.source().x() as i32).abs() as u32;
         let change_in_y_unadjusted = queried_move.destination().y() as i32 - queried_move.source().y() as i32;
         let change_in_y: u32 = change_in_y_unadjusted.abs() as u32;
+        // Y-axis pawn movement rules are inverted for black pawns
+        let change_in_y_color_adjusted = match self.color {
+            ChessPieceColor::White => change_in_y_unadjusted,
+            ChessPieceColor::Black => -change_in_y_unadjusted,
+        };
 
         let vertical_or_horizontal_pattern = (change_in_x == 0 && change_in_y != 0) ^ (change_in_x != 0 && change_in_y == 0);
         let diagonal_pattern = change_in_x == change_in_y;
@@ -68,24 +73,16 @@ impl ChessPiece {
 
         match self.kind {
             Pawn => {
-                // Pawn y-axis movement rules are inverted for black pieces,
-                // then adjusted to two squares intead of one for the first move
-                // This code is a bit verbose, but it's also more readable than boolean arithmetic
                 let pawn_standard_move = {
-                    // TODO: En passant is forced on first move, make this allow either
-                    change_in_x == 0 && change_in_y_unadjusted == match (self.color, self.move_count) {
-                        (White, 0) => 2,
-                        (White, _) => 1,
-                        (Black, 0) => -2,
-                        (Black, _) => -1,
+                    // Y-axis pawn movement is further adjusted to two squares intead of one for the first move
+                    change_in_x == 0 && change_in_y_color_adjusted >= 0 && change_in_y_color_adjusted <= match self.move_count {
+                        0 => 2,
+                        _ => 1,
                     }
                 };
 
                 let pawn_capture_move = {
-                    change_in_x == 1 && change_in_y_unadjusted == match self.color {
-                        White => 1,
-                        Black => -1,
-                    }
+                    change_in_x == 1 && change_in_y_color_adjusted == 1
                 };
 
                 MoveValidity {
@@ -134,5 +131,10 @@ impl ChessPiece {
                 }
             },
         }
+    }
+
+    // Updates the move count of the piece
+    pub fn increment_move_count(&mut self) {
+        self.move_count += 1;
     }
 }

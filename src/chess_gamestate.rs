@@ -72,8 +72,8 @@ impl ChessBoard {
     }
 
     // Returns the piece at a given point, if there is one
-    pub fn piece_at(&self, point: &ChessPoint) -> Option<&ChessPiece> {
-        self.pieces[point.y()][point.x()].as_ref()
+    pub fn piece_at(&mut self, point: &ChessPoint) -> Option<&mut ChessPiece> {
+        self.pieces[point.y()][point.x()].as_mut()
     }
 }
 
@@ -96,7 +96,7 @@ impl ChessGamestate {
     }
 
     // Moves a piece from one square to another, without checking if the move is legal
-    pub fn move_piece(&mut self, requested_move: ChessMove) {
+    pub fn move_piece(&mut self, requested_move: &ChessMove) {
         self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] =
             self.board.pieces[requested_move.source().y()][requested_move.source().x()];
         self.board.pieces[requested_move.source().y()][requested_move.source().x()] = None;

@@ -26,15 +26,17 @@ fn main() {
         let mut user_inputted_move = String::new();
         std::io::stdin().read_line(&mut user_inputted_move).unwrap();
         let move_to_make = ChessMove::from(&user_inputted_move);
-
-        if game.board.piece_at(move_to_make.source()).unwrap().can_make_move(&move_to_make).standard {
+        let piece_to_move = game.board.piece_at(move_to_make.source()).unwrap();
+        
+        if !piece_to_move.can_make_move(&move_to_make).standard {
             print("Move is invalid for that piece.\n");
             continue;
         }
         
         clear();
-
-        game.move_piece(move_to_make);
+        
+        piece_to_move.increment_move_count();
+        game.move_piece(&move_to_make);
         game.print_board();
     }
 }
