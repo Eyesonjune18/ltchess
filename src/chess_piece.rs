@@ -1,13 +1,14 @@
 use crate::MoveValidity;
-use crate::ChessPoint;
+use crate::ChessMove;
 
+#[derive(Clone, Copy)]
 pub struct ChessPiece {
-    pub position: ChessPoint,
     pub kind: ChessPieceKind,
     pub color: ChessPieceColor,
     pub move_count: u32,
 }
 
+#[derive(Clone, Copy)]
 pub enum ChessPieceKind {
     Pawn,
     Rook,
@@ -17,12 +18,21 @@ pub enum ChessPieceKind {
     King,
 }
 
+#[derive(Clone, Copy)]
 pub enum ChessPieceColor {
     White,
     Black,
 }
 
 impl ChessPiece {
+    pub fn new(kind: ChessPieceKind, color: ChessPieceColor) -> Self {
+        ChessPiece {
+            kind,
+            color,
+            move_count: 0,
+        }
+    }
+
     pub fn get_piece_char(&self) -> char {
         use ChessPieceColor::*;
         use ChessPieceKind::*;
@@ -43,7 +53,7 @@ impl ChessPiece {
         }
     }
 
-    pub fn can_move_to(&self, to: ChessPoint) -> MoveValidity {
+    pub fn can_move_to(&self, queried_move: ChessMove) -> MoveValidity {
         match self.kind {
             ChessPieceKind::Pawn => {
                 MoveValidity {
