@@ -72,7 +72,12 @@ impl ChessBoard {
     }
 
     // Returns the piece at a given point, if there is one
-    pub fn piece_at(&mut self, point: &ChessPoint) -> Option<&mut ChessPiece> {
+    // Mutable version is included below
+    pub fn piece_at(&self, point: &ChessPoint) -> Option<&ChessPiece> {
+        self.pieces[point.y()][point.x()].as_ref()
+    }
+
+    pub fn piece_at_mut(&mut self, point: &ChessPoint) -> Option<&mut ChessPiece> {
         self.pieces[point.y()][point.x()].as_mut()
     }
 }

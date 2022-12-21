@@ -14,12 +14,13 @@ pub use chess_point::ChessPoint;
 use std::io::Write;
 
 fn main() {
-    clear();
+    clear_terminal();
 
     let mut game = ChessGamestate::new();
 
     game.print_board();
 
+    'MoveLoop:
     loop {
         print("\nEnter a move: ");
 
@@ -32,10 +33,21 @@ fn main() {
             print("Move is invalid for that piece.\n");
             continue;
         }
+
+        let points_between = ChessPoint::get_points_between(move_to_make.source(), move_to_make.destination());
+
+        // println!("{:?}", points_between);
+
+        for point in points_between {
+            if game.board.piece_at(&point).is_some() {
+                println!("Move is invalid because there is a piece in the way.");
+                continue 'MoveLoop;
+            }
+        }
         
-        clear();
+        clear_terminal();
         
-        piece_to_move.increment_move_count();
+        game.board.piece_at_mut(move_to_make.source()).unwrap().increment_move_count();
         game.move_piece(&move_to_make);
         game.print_board();
     }
@@ -46,6 +58,6 @@ fn print(output: &str) {
     std::io::stdout().flush().unwrap();
 }
 
-fn clear() {
+fn clear_terminal() {
     print!("\x1B[2J\x1B[1;1H");
 }

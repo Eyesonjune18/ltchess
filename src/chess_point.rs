@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct ChessPoint {
     x: usize,
     y: usize,
@@ -57,6 +58,36 @@ impl ChessPoint {
         }
 
         self.y = y;
+    }
+
+    // Get a list of points between two points, excluding the source and destination
+    // Assumes that the relation between source and destination is perfectly horizontal, vertical, or diagonal
+    // TODO: Check for the above condition for error handling
+    pub fn get_points_between(source: &ChessPoint, destination: &ChessPoint) -> Vec<ChessPoint> {
+        let mut points_between = Vec::new();
+
+        // Source is saved to be used as an iterator
+        let mut source_x = source.x();
+        let mut source_y = source.y();
+        let destination_x = destination.x();
+        let destination_y = destination.y();
+
+        let change_in_x = destination_x - source_x;
+        let change_in_y = destination_y - source_y;
+
+        // Each coordinate must be incremented by 1 or -1, depending on the direction
+        // of travel, or 0 if the piece is not moving in that direction
+        let x_increment = (change_in_x as i32).signum() as usize;
+        let y_increment = (change_in_y as i32).signum() as usize;
+
+        while source_x != destination_x || source_y != destination_y {
+            source_x += x_increment;
+            source_y += y_increment;
+
+            points_between.push(ChessPoint::new(source_x, source_y));
+        }
+
+        points_between
     }
 }
 
