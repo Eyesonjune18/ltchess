@@ -26,10 +26,13 @@ fn main() {
 
         game.print_board();
 
-        println!("\nIt is {}'s turn.", match game.turn {
-            ChessPieceColor::White => "white",
-            ChessPieceColor::Black => "black",
-        });
+        println!(
+            "\nIt is {}'s turn.",
+            match game.turn {
+                ChessPieceColor::White => "white",
+                ChessPieceColor::Black => "black",
+            }
+        );
 
         loop {
             print!("Enter a move: ");
@@ -45,14 +48,19 @@ fn main() {
                 Err(err) => {
                     use ChessError::*;
 
-                    println!("{}\n", match err {
-                        InvalidMovePattern => "The piece you selected cannot move in the way specified.",
-                        MoveCollisionOccurs => "Pieces other than Knights cannot move through other pieces.",
-                        CannotCaptureFriendly => "You cannot capture your own pieces.",
-                        CannotSelfCheck => "You cannot move into check.",
-                        EnemyPieceAtMoveSource => "You cannot move an enemy piece.",
-                        NoPieceAtMoveSource => "There is no piece at the selected tile.",
-                    });
+                    println!(
+                        "{}\n",
+                        match err {
+                            InvalidMovePattern =>
+                                "The piece you selected cannot move in the way specified.",
+                            MoveCollisionOccurs =>
+                                "Pieces other than Knights cannot move through other pieces.",
+                            CannotCaptureFriendly => "You cannot capture your own pieces.",
+                            CannotSelfCheck => "You cannot move into check.",
+                            EnemyPieceAtMoveSource => "You cannot move an enemy piece.",
+                            NoPieceAtMoveSource => "There is no piece at the selected tile.",
+                        }
+                    );
 
                     continue;
                 }
