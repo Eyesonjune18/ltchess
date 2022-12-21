@@ -24,35 +24,37 @@ fn main() {
 
     game.print_board();
 
+    // This uses two loops to avoid printing the turn message on every failed move
     loop {
-        use ChessPieceColor::*;
-
         println!("\nIt is {}'s turn.", match game.turn {
-            White => "white",
-            Black => "black",
+            ChessPieceColor::White => "white",
+            ChessPieceColor::Black => "black",
         });
 
-        print("Enter a move: ");
+        loop {
+            print!("Enter a move: ");
+            flush();
 
-        let mut user_inputted_move = String::new();
-        stdin().read_line(&mut user_inputted_move).unwrap();
-        let move_to_make = ChessMove::from(&user_inputted_move);
+            let mut user_inputted_move = String::new();
+            stdin().read_line(&mut user_inputted_move).unwrap();
+            let move_to_make = ChessMove::from(&user_inputted_move);
 
-        match game.perform_move(&move_to_make) {
-            Ok(_) => (),
-            Err(err) => {
-                use ChessError::*;
+            match game.perform_move(&move_to_make) {
+                Ok(_) => break,
+                Err(err) => {
+                    use ChessError::*;
 
-                print(match err {
-                    InvalidMovePattern => "The piece you selected cannot move in the way specified.\n",
-                    MoveCollisionOccurs => "Excluding knights, pieces cannot move through other pieces.\n",
-                    CannotCaptureFriendly => "You cannot capture your own pieces.\n",
-                    CannotSelfCheck => "You cannot move into check.\n",
-                    EnemyPieceAtMoveSource => "You cannot move an enemy piece.\n",
-                    NoPieceAtMoveSource => "There is no piece at the selected tile.\n",
-                });
+                    println!("{}\n", match err {
+                        InvalidMovePattern => "The piece you selected cannot move in the way specified.",
+                        MoveCollisionOccurs => "Excluding knights, pieces cannot move through other pieces.",
+                        CannotCaptureFriendly => "You cannot capture your own pieces.",
+                        CannotSelfCheck => "You cannot move into check.",
+                        EnemyPieceAtMoveSource => "You cannot move an enemy piece.",
+                        NoPieceAtMoveSource => "There is no piece at the selected tile.",
+                    });
 
-                continue;
+                    continue;
+                }
             }
         }
 
@@ -62,8 +64,7 @@ fn main() {
     }
 }
 
-fn print(output: &str) {
-    print!("{}", output);
+fn flush() {
     stdout().flush().unwrap();
 }
 
