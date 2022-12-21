@@ -121,6 +121,17 @@ impl ChessGamestate {
             return Err(EnemyPieceAtMoveSource);
         }
 
+        // Ensure that the move pattern is legal for the piece
+        // This must be done before the collision check because the collision check will malfunction if the path is illegal
+        let move_pattern_legality = moved_piece.can_make_move(queried_move);
+
+        if !match move_is_capture {
+            true => move_pattern_legality.capture,
+            false => move_pattern_legality.standard,
+        } {
+            return Err(InvalidMovePattern);
+        }
+
         // Ensure that the piece does not collide with other pieces
         if moved_piece.kind != ChessPieceKind::Knight {
             let points_between =
@@ -139,16 +150,6 @@ impl ChessGamestate {
             if captured_piece.unwrap().color == self.turn {
                 return Err(CannotCaptureFriendly);
             }
-        }
-
-        // Ensure that the move pattern is legal for the piece
-        let move_pattern_legality = moved_piece.can_make_move(queried_move);
-
-        if !match move_is_capture {
-            true => move_pattern_legality.capture,
-            false => move_pattern_legality.standard,
-        } {
-            return Err(InvalidMovePattern);
         }
 
         Ok(())
