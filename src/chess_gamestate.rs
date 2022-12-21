@@ -157,14 +157,14 @@ impl ChessGamestate {
     // Updates gamestate variables as necessary before a move is performed
     // This function should be called before move_piece() and after validate_move()
     // TODO: Error handling here
-    pub fn update_gamestate(&mut self, performed_move: &ChessMove) {
+    fn update_gamestate(&mut self, move_to_perform: &ChessMove) {
         use ChessPieceColor::*;
 
-        let moved_piece = self.board.piece_at_mut(performed_move.source()).unwrap();
+        let moved_piece = self.board.piece_at_mut(move_to_perform.source()).unwrap();
         moved_piece.increment_move_count();
         let moved_piece_is_pawn = moved_piece.kind == ChessPieceKind::Pawn;
 
-        let captured_piece = self.board.piece_at(performed_move.destination());
+        let captured_piece = self.board.piece_at(move_to_perform.destination());
 
         if captured_piece.is_some() || moved_piece_is_pawn {
             self.halfmove_clock = 0;
@@ -181,10 +181,21 @@ impl ChessGamestate {
     }
 
     // Moves a piece from one square to another, without checking if the move is legal
-    pub fn move_piece(&mut self, requested_move: &ChessMove) {
+    fn move_piece(&mut self, requested_move: &ChessMove) {
         self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] =
             self.board.pieces[requested_move.source().y()][requested_move.source().x()];
         self.board.pieces[requested_move.source().y()][requested_move.source().x()] = None;
+    }
+
+    // Performs a move, updating the gamestate as necessary
+    // This function provides a safer interface for performing a move, as anyone writing
+    // external code do not need to worry about the order of the 3 functions
+    pub fn perform_move(&mut self, move_to_perform: &ChessMove) -> Result<(), ChessError> {
+        self.validate_move(move_to_perform)?;
+        self.update_gamestate(move_to_perform);
+        self.move_piece(move_to_perform);
+
+        Ok(())
     }
 
     // TODO: Probably move this to UI

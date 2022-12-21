@@ -31,7 +31,7 @@ fn main() {
         stdin().read_line(&mut user_inputted_move).unwrap();
         let move_to_make = ChessMove::from(&user_inputted_move);
 
-        match game.validate_move(&move_to_make) {
+        match game.perform_move(&move_to_make) {
             Ok(_) => (),
             Err(_) => {
                 print("Move is invalid for that piece.\n");
@@ -39,9 +39,6 @@ fn main() {
             }
         }
 
-        game.update_gamestate(&move_to_make);
-        game.move_piece(&move_to_make);
-        
         clear_terminal();
 
         game.print_board();
