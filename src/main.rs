@@ -33,8 +33,18 @@ fn main() {
 
         match game.perform_move(&move_to_make) {
             Ok(_) => (),
-            Err(_) => {
-                print("Move is invalid for that piece.\n");
+            Err(err) => {
+                use ChessError::*;
+
+                print(match err {
+                    InvalidMovePattern => "The piece you selected cannot move in the way specified.\n",
+                    MoveCollisionOccurs => "Excluding knights, pieces cannot move through other pieces.\n",
+                    CannotCaptureFriendly => "You cannot capture your own pieces.\n",
+                    CannotSelfCheck => "You cannot move into check.\n",
+                    EnemyPieceAtMoveSource => "You cannot move an enemy piece.\n",
+                    NoPieceAtMoveSource => "There is no piece at the selected tile.\n",
+                });
+
                 continue;
             }
         }
