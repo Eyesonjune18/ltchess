@@ -13,7 +13,10 @@ pub struct MoveValidity {
 
 impl ChessMove {
     pub fn new(from: ChessPoint, to: ChessPoint) -> Self {
-        ChessMove { source: from, destination: to }
+        ChessMove {
+            source: from,
+            destination: to,
+        }
     }
 
     // Parse a move from a combined algebraic position string, like "e2 e4"

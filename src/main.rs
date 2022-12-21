@@ -20,23 +20,23 @@ fn main() {
 
     game.print_board();
 
-    'MoveLoop:
-    loop {
+    'MoveLoop: loop {
         print("\nEnter a move: ");
 
         let mut user_inputted_move = String::new();
         std::io::stdin().read_line(&mut user_inputted_move).unwrap();
         let move_to_make = ChessMove::from(&user_inputted_move);
         let piece_to_move = game.board.piece_at(move_to_make.source()).unwrap();
-        
+
         if !piece_to_move.can_make_move(&move_to_make).standard {
             print("Move is invalid for that piece.\n");
             continue;
         }
 
         if piece_to_move.kind != ChessPieceKind::Knight {
-            let points_between = ChessPoint::get_points_between(move_to_make.source(), move_to_make.destination());
-            
+            let points_between =
+                ChessPoint::get_points_between(move_to_make.source(), move_to_make.destination());
+
             for point in points_between {
                 if game.board.piece_at(&point).is_some() {
                     println!("Move is invalid because there is a piece in the way.");
@@ -44,10 +44,13 @@ fn main() {
                 }
             }
         }
-        
+
         clear_terminal();
-        
-        game.board.piece_at_mut(move_to_make.source()).unwrap().increment_move_count();
+
+        game.board
+            .piece_at_mut(move_to_make.source())
+            .unwrap()
+            .increment_move_count();
         game.move_piece(&move_to_make);
         game.print_board();
     }
