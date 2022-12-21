@@ -25,7 +25,14 @@ fn main() {
     game.print_board();
 
     loop {
-        print("\nEnter a move: ");
+        use ChessPieceColor::*;
+
+        println!("\nIt is {}'s turn.", match game.turn {
+            White => "white",
+            Black => "black",
+        });
+
+        print("Enter a move: ");
 
         let mut user_inputted_move = String::new();
         stdin().read_line(&mut user_inputted_move).unwrap();
