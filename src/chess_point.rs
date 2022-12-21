@@ -67,25 +67,28 @@ impl ChessPoint {
         let mut points_between = Vec::new();
 
         // Source is saved to be used as an iterator
-        let mut source_x = source.x();
-        let mut source_y = source.y();
-        let destination_x = destination.x();
-        let destination_y = destination.y();
+        let mut source_x = source.x() as i32;
+        let mut source_y = source.y() as i32;
+        let destination_x = destination.x() as i32;
+        let destination_y = destination.y() as i32;
 
         let change_in_x = destination_x - source_x;
         let change_in_y = destination_y - source_y;
 
         // Each coordinate must be incremented by 1 or -1, depending on the direction
         // of travel, or 0 if the piece is not moving in that direction
-        let x_increment = (change_in_x as i32).signum() as usize;
-        let y_increment = (change_in_y as i32).signum() as usize;
+        let x_increment = (change_in_x as i32).signum();
+        let y_increment = (change_in_y as i32).signum();
 
         while source_x != destination_x || source_y != destination_y {
             source_x += x_increment;
             source_y += y_increment;
 
-            points_between.push(ChessPoint::new(source_x, source_y));
+            points_between.push(ChessPoint::new(source_x as usize, source_y as usize));
         }
+
+        // Remove the destination point so as not to forbid a capture
+        points_between.pop();
 
         points_between
     }

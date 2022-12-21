@@ -34,14 +34,14 @@ fn main() {
             continue;
         }
 
-        let points_between = ChessPoint::get_points_between(move_to_make.source(), move_to_make.destination());
-
-        // println!("{:?}", points_between);
-
-        for point in points_between {
-            if game.board.piece_at(&point).is_some() {
-                println!("Move is invalid because there is a piece in the way.");
-                continue 'MoveLoop;
+        if piece_to_move.kind != ChessPieceKind::Knight {
+            let points_between = ChessPoint::get_points_between(move_to_make.source(), move_to_make.destination());
+            
+            for point in points_between {
+                if game.board.piece_at(&point).is_some() {
+                    println!("Move is invalid because there is a piece in the way.");
+                    continue 'MoveLoop;
+                }
             }
         }
         

@@ -8,7 +8,7 @@ pub struct ChessPiece {
     pub move_count: u32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ChessPieceKind {
     Pawn,
     Rook,
