@@ -12,6 +12,8 @@ pub use chess_piece::ChessPieceKind;
 pub use chess_point::ChessPoint;
 
 use std::io::Write;
+use std::io::stdin;
+use std::io::stdout;
 
 fn main() {
     clear_terminal();
@@ -24,7 +26,7 @@ fn main() {
         print("\nEnter a move: ");
 
         let mut user_inputted_move = String::new();
-        std::io::stdin().read_line(&mut user_inputted_move).unwrap();
+        stdin().read_line(&mut user_inputted_move).unwrap();
         let move_to_make = ChessMove::from(&user_inputted_move);
         let piece_to_move = game.board.piece_at(move_to_make.source()).unwrap();
 
@@ -58,7 +60,7 @@ fn main() {
 
 fn print(output: &str) {
     print!("{}", output);
-    std::io::stdout().flush().unwrap();
+    stdout().flush().unwrap();
 }
 
 fn clear_terminal() {
