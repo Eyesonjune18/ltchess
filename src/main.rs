@@ -18,14 +18,14 @@ use std::io::stdout;
 use std::io::Write;
 
 fn main() {
-    clear_terminal();
-
     let mut game = ChessGamestate::new();
-
-    game.print_board();
 
     // This uses two loops to avoid printing the turn message on every failed move
     loop {
+        clear_terminal();
+
+        game.print_board();
+
         println!("\nIt is {}'s turn.", match game.turn {
             ChessPieceColor::White => "white",
             ChessPieceColor::Black => "black",
@@ -40,13 +40,14 @@ fn main() {
             let move_to_make = ChessMove::from(&user_inputted_move);
 
             match game.perform_move(&move_to_make) {
+                // If the move was valid, break out of the move repeat loop
                 Ok(_) => break,
                 Err(err) => {
                     use ChessError::*;
 
                     println!("{}\n", match err {
                         InvalidMovePattern => "The piece you selected cannot move in the way specified.",
-                        MoveCollisionOccurs => "Excluding knights, pieces cannot move through other pieces.",
+                        MoveCollisionOccurs => "Pieces other than Knights cannot move through other pieces.",
                         CannotCaptureFriendly => "You cannot capture your own pieces.",
                         CannotSelfCheck => "You cannot move into check.",
                         EnemyPieceAtMoveSource => "You cannot move an enemy piece.",
@@ -57,10 +58,6 @@ fn main() {
                 }
             }
         }
-
-        clear_terminal();
-
-        game.print_board();
     }
 }
 
