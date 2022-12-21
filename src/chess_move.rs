@@ -1,12 +1,11 @@
 use crate::ChessPoint;
 
-#[allow(dead_code)]
 pub struct ChessMove {
     source: ChessPoint,
     destination: ChessPoint,
 }
 
-pub struct MoveValidity {
+pub struct MovePatternValidity {
     pub standard: bool,
     pub capture: bool,
 }

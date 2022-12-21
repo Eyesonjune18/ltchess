@@ -1,5 +1,5 @@
 use crate::ChessMove;
-use crate::MoveValidity;
+use crate::MovePatternValidity;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ChessPiece {
@@ -18,7 +18,7 @@ pub enum ChessPieceKind {
     King,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ChessPieceColor {
     White,
     Black,
@@ -55,7 +55,7 @@ impl ChessPiece {
     }
 
     // Checks whether the piece can move to the given square, based only on its movement patterns
-    pub fn can_make_move(&self, queried_move: &ChessMove) -> MoveValidity {
+    pub fn can_make_move(&self, queried_move: &ChessMove) -> MovePatternValidity {
         let change_in_x: u32 =
             (queried_move.destination().x() as i32 - queried_move.source().x() as i32).abs() as u32;
         let change_in_y_unadjusted =
@@ -88,7 +88,7 @@ impl ChessPiece {
 
                 let pawn_capture_move = { change_in_x == 1 && change_in_y_color_adjusted == 1 };
 
-                MoveValidity {
+                MovePatternValidity {
                     standard: pawn_standard_move,
                     capture: pawn_capture_move,
                 }
@@ -96,7 +96,7 @@ impl ChessPiece {
             Rook => {
                 let rook_move = vertical_or_horizontal_pattern;
 
-                MoveValidity {
+                MovePatternValidity {
                     standard: rook_move,
                     capture: rook_move,
                 }
@@ -105,7 +105,7 @@ impl ChessPiece {
                 let knight_move =
                     (change_in_x == 1 && change_in_y == 2) ^ (change_in_x == 2 && change_in_y == 1);
 
-                MoveValidity {
+                MovePatternValidity {
                     standard: knight_move,
                     capture: knight_move,
                 }
@@ -113,7 +113,7 @@ impl ChessPiece {
             Bishop => {
                 let bishop_move = diagonal_pattern;
 
-                MoveValidity {
+                MovePatternValidity {
                     standard: bishop_move,
                     capture: bishop_move,
                 }
@@ -121,7 +121,7 @@ impl ChessPiece {
             Queen => {
                 let queen_move = vertical_or_horizontal_pattern ^ diagonal_pattern;
 
-                MoveValidity {
+                MovePatternValidity {
                     standard: queen_move,
                     capture: queen_move,
                 }
@@ -130,7 +130,7 @@ impl ChessPiece {
                 let king_move = (change_in_x <= 1 && change_in_y <= 1)
                     && !(change_in_x == 0 && change_in_y == 0);
 
-                MoveValidity {
+                MovePatternValidity {
                     standard: king_move,
                     capture: king_move,
                 }
