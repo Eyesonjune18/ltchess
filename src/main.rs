@@ -61,8 +61,6 @@ fn main() {
                             NoPieceAtMoveSource => "There is no piece at the selected tile.",
                         }
                     );
-
-                    continue;
                 }
             }
         }
