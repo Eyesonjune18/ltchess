@@ -7,10 +7,7 @@ pub struct ChessPoint {
 impl ChessPoint {
     pub fn new(x: usize, y: usize) -> ChessPoint {
         if !validate_bounds(x, y) {
-            panic!(
-                "Invalid point coordinates on point creation: ({}, {})",
-                x, y
-            );
+            panic!("[INTERNAL ERROR] Invalid point coordinates on point creation: ({}, {})", x, y);
         }
 
         ChessPoint { x, y }
@@ -40,10 +37,7 @@ impl ChessPoint {
 
     pub fn set_x(&mut self, x: usize) {
         if !validate_bounds(x, self.y) {
-            panic!(
-                "Invalid point coordinates on point X-position update: ({}, {})",
-                x, self.y
-            );
+            panic!("[INTERNAL ERROR] Invalid point coordinates on point X-position update: ({}, {})", x, self.y);
         }
 
         self.x = x;
@@ -51,10 +45,7 @@ impl ChessPoint {
 
     pub fn set_y(&mut self, y: usize) {
         if !validate_bounds(self.x, y) {
-            panic!(
-                "Invalid point coordinates on point Y-position update: ({}, {})",
-                self.x, y
-            );
+            panic!("[INTERNAL ERROR] Invalid point coordinates on point Y-position update: ({}, {})", self.x, y);
         }
 
         self.y = y;

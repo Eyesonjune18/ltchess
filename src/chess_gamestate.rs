@@ -161,12 +161,15 @@ impl ChessGamestate {
     fn update_gamestate(&mut self, move_to_perform: &ChessMove) {
         use ChessPieceColor::*;
 
+        // Increment the piece's move count
         let moved_piece = self.board.piece_at_mut(move_to_perform.source()).unwrap();
         moved_piece.increment_move_count();
+        
+        // Check if a Pawn was moved and grab captured piece (if there is one) to check if the halfmove clock should be reset
         let moved_piece_is_pawn = moved_piece.kind == ChessPieceKind::Pawn;
-
         let captured_piece = self.board.piece_at(move_to_perform.destination());
 
+        // Increment the move clocks
         if captured_piece.is_some() || moved_piece_is_pawn {
             self.halfmove_clock = 0;
         } else {
@@ -175,6 +178,11 @@ impl ChessGamestate {
 
         self.fullmove_clock += 1;
 
+        // Update the positions of both Kings
+        self.white_king = self.find_king(White);
+        self.black_king = self.find_king(Black);
+
+        // Swap the turn color
         self.turn = match self.turn {
             White => Black,
             Black => White,
@@ -197,6 +205,21 @@ impl ChessGamestate {
         self.move_piece(move_to_perform);
 
         Ok(())
+    }
+
+    // Finds the position of the given color's King
+    fn find_king(&self, color: ChessPieceColor) -> ChessPoint {
+        for (y, row) in self.board.pieces.iter().enumerate() {
+            for (x, piece) in row.iter().enumerate() {
+                if let Some(piece) = piece {
+                    if piece.kind == ChessPieceKind::King && piece.color == color {
+                        return ChessPoint::new(x, y);
+                    }
+                }
+            }
+        }
+
+        panic!("[INTERNAL ERROR] Unable to find King");
     }
 
     // TODO: Probably move this to UI
