@@ -11,8 +11,8 @@ pub struct ChessGamestate {
     // The color of the player whose turn it is
     pub turn: ChessPieceColor,
     // The current position of each king
-    pub white_king: ChessPoint,
-    pub black_king: ChessPoint,
+    pub white_king_position: ChessPoint,
+    pub black_king_position: ChessPoint,
     // Castling rights for each side
     pub white_castle_kingside: bool,
     pub white_castle_queenside: bool,
@@ -89,8 +89,8 @@ impl ChessGamestate {
         ChessGamestate {
             board: ChessBoard::new(),
             turn: ChessPieceColor::White,
-            white_king: ChessPoint::new(4, 0),
-            black_king: ChessPoint::new(4, 7),
+            white_king_position: ChessPoint::new(4, 0),
+            black_king_position: ChessPoint::new(4, 7),
             white_castle_kingside: true,
             white_castle_queenside: true,
             black_castle_kingside: true,
@@ -179,8 +179,27 @@ impl ChessGamestate {
         self.fullmove_clock += 1;
 
         // Update the positions of both Kings
-        self.white_king = self.find_king(White);
-        self.black_king = self.find_king(Black);
+        self.white_king_position = self.find_king(White);
+        self.black_king_position = self.find_king(Black);
+
+        // Update the castling rights
+        // Though these tiles do not always contain Rooks and Kings, the castling rights
+        // would have been removed beforehand anyway if the tiles are no longer occupied by Rooks or Kings
+        match (move_to_perform.source().x(), move_to_perform.source().y()) {
+            (7, 0) => self.white_castle_kingside = false,
+            (0, 0) => self.white_castle_queenside = false,
+            (7, 7) => self.black_castle_kingside = false,
+            (0, 7) => self.black_castle_queenside = false,
+            (4, 0) => {
+                self.white_castle_kingside = false;
+                self.white_castle_queenside = false;
+            }
+            (4, 7) => {
+                self.black_castle_kingside = false;
+                self.black_castle_queenside = false;
+            }
+            _ => (),
+        }
 
         // Swap the turn color
         self.turn = match self.turn {
