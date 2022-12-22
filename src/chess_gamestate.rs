@@ -238,7 +238,33 @@ impl ChessGamestate {
             }
         }
 
-        panic!("[INTERNAL ERROR] Unable to find King");
+        unreachable!("[INTERNAL ERROR] Unable to find King");
+    }
+
+    // Checks if the given color's King is in check
+    // If using this for move validation (self-check rule) then the move should be performed first
+    fn is_check(&self, friendly_color: ChessPieceColor) -> bool {
+        let king_position = match friendly_color {
+            ChessPieceColor::White => self.white_king_position,
+            ChessPieceColor::Black => self.black_king_position,
+        };
+
+        // This can be optimized by only looking at the squares that enemy pieces could be in to threaten the King
+        for (y, row) in self.board.pieces.iter().enumerate() {
+            for (x, piece) in row.iter().enumerate() {
+                if let Some(piece) = piece {
+                    if piece.color != friendly_color {
+                        let move_to_check = ChessMove::new(ChessPoint::new(x, y), king_position);
+
+                        if self.validate_move(&move_to_check).is_ok() {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        false
     }
 
     // TODO: Probably move this to UI
