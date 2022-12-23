@@ -5,11 +5,12 @@ use crate::ChessPieceColor;
 use crate::ChessPieceKind;
 use crate::ChessPoint;
 
+#[derive(Copy, Clone)]
 pub struct ChessGamestate {
     // The array of pieces on the board
     pub board: ChessBoard,
     // The color of the player whose turn it is
-    pub turn: ChessPieceColor,
+    pub turn_color: ChessPieceColor,
     // The current position of each king
     pub white_king_position: ChessPoint,
     pub black_king_position: ChessPoint,
@@ -26,6 +27,7 @@ pub struct ChessGamestate {
     pub fullmove_clock: u32,
 }
 
+#[derive(Copy, Clone)]
 pub struct ChessBoard {
     pieces: [[Option<ChessPiece>; 8]; 8],
 }
@@ -88,7 +90,7 @@ impl ChessGamestate {
     pub fn new() -> Self {
         ChessGamestate {
             board: ChessBoard::new(),
-            turn: ChessPieceColor::White,
+            turn_color: ChessPieceColor::White,
             white_king_position: ChessPoint::new(4, 0),
             black_king_position: ChessPoint::new(4, 7),
             white_castle_kingside: true,
@@ -102,7 +104,8 @@ impl ChessGamestate {
     }
 
     // Checks if a move is legal, based on a combination of the moved piece and the gamestate variables
-    pub fn validate_move(&self, queried_move: &ChessMove) -> Result<(), ChessError> {
+    // Check override is used to avoid calling is_check() recursively, as this function is called by is_check()
+    fn validate_move(&self, queried_move: &ChessMove, check_override: bool) -> Result<(), ChessError> {
         use ChessError::*;
 
         // Ensure that the source tile is not empty
@@ -117,7 +120,7 @@ impl ChessGamestate {
         let move_is_capture = captured_piece.is_some();
 
         // Ensure that the source tile does not contain an enemy piece
-        if moved_piece.color != self.turn {
+        if moved_piece.color != self.turn_color {
             return Err(EnemyPieceAtMoveSource);
         }
 
@@ -125,6 +128,8 @@ impl ChessGamestate {
         // This must be done before the collision check because the collision check will malfunction if the path is illegal
         let move_pattern_legality = moved_piece.can_make_move(queried_move);
 
+        // If the move is a capture, check the capture legality instead of the standard move legality
+        // This is pretty much entirely because of Pawns, whose capture and standard move patterns are different
         if !match move_is_capture {
             true => move_pattern_legality.capture,
             false => move_pattern_legality.standard,
@@ -147,8 +152,23 @@ impl ChessGamestate {
         // Ensure that the captured piece (if there is one) is an enemy piece
         if move_is_capture {
             // Unwrap is safe here because there must be a destination piece for the move to be a capture
-            if captured_piece.unwrap().color == self.turn {
+            if captured_piece.unwrap().color == self.turn_color {
                 return Err(CannotCaptureFriendly);
+            }
+        }
+        
+        // Ensure that the move does not put the friendly King in check
+        if !check_override {
+            // Copy the gamestate and perform the move on the copy
+            let mut hypothetical_gamestate = self.clone();
+            hypothetical_gamestate.move_piece(queried_move);
+
+            // A full gamestate update is unnecessary here, so the turn color is swapped individually
+            // The color is updated in order to allow the is_check() validation calls to work properly without extra parameters
+            hypothetical_gamestate.swap_turn_color();
+            
+            if hypothetical_gamestate.is_check() {
+                return Err(CannotSelfCheck);
             }
         }
 
@@ -156,72 +176,47 @@ impl ChessGamestate {
     }
 
     // Updates gamestate variables as necessary before a move is performed
-    // This function should be called before move_piece() and after validate_move()
+    // This function should be called after validate_move() and move_piece()
+    // Because the move has already been performed, the function must be informed of whether or not the
+    // move was a catpture in order to update the halfmove clock correctly
     // TODO: Error handling here
-    fn update_gamestate(&mut self, move_to_perform: &ChessMove) {
-        use ChessPieceColor::*;
-
-        // Increment the piece's move count
-        let moved_piece = self.board.piece_at_mut(move_to_perform.source()).unwrap();
+    fn update_gamestate(&mut self, performed_move: &ChessMove, move_was_capture: bool) {
+        // Unwrap is safe here because (assuming the move calling order was correct) the moved piece must be at the destination
+        // TODO: Add an unreachable!() here
+        let moved_piece = self.board.piece_at_mut(performed_move.destination()).unwrap();
+        
         moved_piece.increment_move_count();
         
-        // Check if a Pawn was moved and grab captured piece (if there is one) to check if the halfmove clock should be reset
-        let moved_piece_is_pawn = moved_piece.kind == ChessPieceKind::Pawn;
-        let captured_piece = self.board.piece_at(move_to_perform.destination());
+        // Check if a Pawn was moved to determine if the halfmove clock should be reset
+        let moved_piece_was_pawn = moved_piece.kind == ChessPieceKind::Pawn;
 
-        // Increment the move clocks
-        if captured_piece.is_some() || moved_piece_is_pawn {
-            self.halfmove_clock = 0;
-        } else {
-            self.halfmove_clock += 1;
-        }
+        self.increment_move_clocks(move_was_capture || moved_piece_was_pawn);
 
-        self.fullmove_clock += 1;
+        self.update_king_positions();
 
-        // Update the positions of both Kings
-        self.white_king_position = self.find_king(White);
-        self.black_king_position = self.find_king(Black);
-
-        // Update the castling rights
-        // Though these tiles do not always contain Rooks and Kings, the castling rights
-        // would have been removed beforehand anyway if the tiles are no longer occupied by Rooks or Kings
-        match (move_to_perform.source().x(), move_to_perform.source().y()) {
-            (7, 0) => self.white_castle_kingside = false,
-            (0, 0) => self.white_castle_queenside = false,
-            (7, 7) => self.black_castle_kingside = false,
-            (0, 7) => self.black_castle_queenside = false,
-            (4, 0) => {
-                self.white_castle_kingside = false;
-                self.white_castle_queenside = false;
-            }
-            (4, 7) => {
-                self.black_castle_kingside = false;
-                self.black_castle_queenside = false;
-            }
-            _ => (),
-        }
-
-        // Swap the turn color
-        self.turn = match self.turn {
-            White => Black,
-            Black => White,
-        };
+        self.update_castling_rights();
+        
+        self.swap_turn_color();
     }
 
-    // Moves a piece from one square to another, without checking if the move is legal
-    fn move_piece(&mut self, requested_move: &ChessMove) {
-        self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] =
-            self.board.pieces[requested_move.source().y()][requested_move.source().x()];
+    // Performs a "simple move" - a piece is moved from one tile to another, without checking any validity requirements
+    // TODO: Refactor to use a function in ChessBoard to set pieces
+    fn move_piece(&mut self, requested_move: &ChessMove) -> bool {
+        let move_is_capture = self.board.pieces[requested_move.destination().y()][requested_move.destination().x()].is_some();
+
+        self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] = self.board.pieces[requested_move.source().y()][requested_move.source().x()];
         self.board.pieces[requested_move.source().y()][requested_move.source().x()] = None;
+    
+        move_is_capture
     }
 
-    // Performs a move, updating the gamestate as necessary
+    // Performs a "complex move" - the move is validated, the simple move is performed, and the gamestate is updated
     // This function provides a safer interface for performing a move, as anyone writing
-    // external code do not need to worry about the order of the 3 functions
+    // external code does not need to worry about the order of the 3 functions
     pub fn perform_move(&mut self, move_to_perform: &ChessMove) -> Result<(), ChessError> {
-        self.validate_move(move_to_perform)?;
-        self.update_gamestate(move_to_perform);
-        self.move_piece(move_to_perform);
+        self.validate_move(move_to_perform, true)?;
+        let move_was_capture = self.move_piece(move_to_perform);
+        self.update_gamestate(move_to_perform, move_was_capture);
 
         Ok(())
     }
@@ -241,22 +236,88 @@ impl ChessGamestate {
         unreachable!("[INTERNAL ERROR] Unable to find King");
     }
 
-    // Checks if the given color's King is in check
-    // If using this for move validation (self-check rule) then the move should be performed first
-    fn is_check(&self, friendly_color: ChessPieceColor) -> bool {
-        let king_position = match friendly_color {
-            ChessPieceColor::White => self.white_king_position,
-            ChessPieceColor::Black => self.black_king_position,
+    // Updates the King positions fields in the gamestate
+    fn update_king_positions(&mut self) {
+        self.white_king_position = self.find_king(ChessPieceColor::White);
+        self.black_king_position = self.find_king(ChessPieceColor::Black);
+    }
+
+    // Updates the castling rights for both colors, based on the current board state
+    // Though Rooks and Kings can move back to their original positions, the castling rights are never restored,
+    // they are only removed; this means that the function does not need to check their move counts
+    // This could be done through any number of methods but this one is the simplest
+    fn update_castling_rights(&mut self) {
+        // White King
+        if self.board.piece_at(&ChessPoint::new(4, 0)).is_none() {
+            self.white_castle_kingside = false;
+            self.white_castle_queenside = false;
+        }
+
+        // Black King
+        if self.board.piece_at(&ChessPoint::new(4, 7)).is_none() {
+            self.black_castle_kingside = false;
+            self.black_castle_queenside = false;
+        }
+
+        // White Rook (right)
+        if self.board.piece_at(&ChessPoint::new(7, 0)).is_none() {
+            self.white_castle_kingside = false;
+        }
+
+        // White Rook (left)
+        if self.board.piece_at(&ChessPoint::new(0, 0)).is_none() {
+            self.white_castle_queenside = false;
+        }
+
+        // Black Rook (right)
+        if self.board.piece_at(&ChessPoint::new(7, 7)).is_none() {
+            self.black_castle_kingside = false;
+        }
+
+        // Black Rook (left)
+        if self.board.piece_at(&ChessPoint::new(0, 7)).is_none() {
+            self.black_castle_queenside = false;
+        }
+    }
+
+    // Increments or resets the move clocks, based on the move that was performed
+    fn increment_move_clocks(&mut self, reset_halfmove_clock: bool) {
+        self.halfmove_clock += 1;
+        self.fullmove_clock += 1;
+
+        if reset_halfmove_clock {
+            self.halfmove_clock = 0;
+        }
+    }
+
+    // Switches the turn color, usually after a move is performed
+    fn swap_turn_color(&mut self) {
+        use ChessPieceColor::*;
+
+        self.turn_color = match self.turn_color {
+            White => Black,
+            Black => White,
+        };
+    }
+
+    // Checks if the enemy color's King is in check
+    // This can be used after a hypothetical move to test if the move would put
+    // the friendly King in check, but only after the turn color has been swapped
+    fn is_check(&self) -> bool {
+        let king_position = match self.turn_color {
+            ChessPieceColor::White => self.black_king_position,
+            ChessPieceColor::Black => self.white_king_position,
         };
 
-        // This can be optimized by only looking at the squares that enemy pieces could be in to threaten the King
+        // TODO: This can be optimized by only looking at the squares that enemy pieces could be in to threaten the King
         for (y, row) in self.board.pieces.iter().enumerate() {
             for (x, piece) in row.iter().enumerate() {
                 if let Some(piece) = piece {
-                    if piece.color != friendly_color {
+                    if piece.color == self.turn_color {
                         let move_to_check = ChessMove::new(ChessPoint::new(x, y), king_position);
 
-                        if self.validate_move(&move_to_check).is_ok() {
+                        // If any of the enemy pieces can legally move to the King's position, then the King is in check
+                        if self.validate_move(&move_to_check, true).is_ok() {
                             return true;
                         }
                     }

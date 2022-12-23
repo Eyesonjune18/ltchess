@@ -1,6 +1,7 @@
 use crate::ChessMove;
 use crate::MovePatternValidity;
 
+// TODO: Normalize ordering of derives
 #[derive(Clone, Copy, Debug)]
 pub struct ChessPiece {
     pub kind: ChessPieceKind,

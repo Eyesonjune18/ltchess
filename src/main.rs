@@ -28,7 +28,7 @@ fn main() {
 
         println!(
             "\nIt is {}'s turn.",
-            match game.turn {
+            match game.turn_color {
                 ChessPieceColor::White => "white",
                 ChessPieceColor::Black => "black",
             }
