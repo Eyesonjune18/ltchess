@@ -184,14 +184,12 @@ impl ChessGamestate {
     // This function should be called after validate_move() and move_piece()
     // Because the move has already been performed, the function must be informed of whether or not the
     // move was a catpture in order to update the halfmove clock correctly
-    // TODO: Error handling here
     fn update_gamestate(&mut self, performed_move: &ChessMove, move_was_capture: bool) {
-        // Unwrap is safe here because (assuming the move calling order was correct) the moved piece must be at the destination
-        // TODO: Add an unreachable!() here
-        let moved_piece = self
-            .board
-            .piece_at_mut(performed_move.destination())
-            .unwrap();
+        // As long as the move calling order is correct, the piece at the destination will be the moved piece
+        let moved_piece = match self.board.piece_at_mut(performed_move.destination()) {
+            Some(piece) => piece,
+            None => unreachable!("[INTERNAL ERROR] Moved piece not found at destination after move"),
+        };
 
         moved_piece.increment_move_count();
 

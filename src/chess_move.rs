@@ -12,10 +12,10 @@ pub struct MovePatternValidity {
 
 impl ChessMove {
     // TODO: Decide on from/to or source/destination
-    pub fn new(from: ChessPoint, to: ChessPoint) -> Self {
+    pub fn new(source: ChessPoint, destination: ChessPoint) -> Self {
         ChessMove {
-            source: from,
-            destination: to,
+            source,
+            destination,
         }
     }
 
