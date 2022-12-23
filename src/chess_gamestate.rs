@@ -5,7 +5,7 @@ use crate::ChessPieceColor;
 use crate::ChessPieceKind;
 use crate::ChessPoint;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct ChessGamestate {
     // The array of pieces on the board
     pub board: ChessBoard,
@@ -27,7 +27,7 @@ pub struct ChessGamestate {
     pub fullmove_clock: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct ChessBoard {
     pieces: [[Option<ChessPiece>; 8]; 8],
 }
@@ -105,7 +105,11 @@ impl ChessGamestate {
 
     // Checks if a move is legal, based on a combination of the moved piece and the gamestate variables
     // Check override is used to avoid calling is_check() recursively, as this function is called by is_check()
-    fn validate_move(&self, queried_move: &ChessMove, check_override: bool) -> Result<(), ChessError> {
+    fn validate_move(
+        &self,
+        queried_move: &ChessMove,
+        check_override: bool,
+    ) -> Result<(), ChessError> {
         use ChessError::*;
 
         // Ensure that the source tile is not empty
@@ -156,7 +160,7 @@ impl ChessGamestate {
                 return Err(CannotCaptureFriendly);
             }
         }
-        
+
         // Ensure that the move does not put the friendly King in check
         if !check_override {
             // Copy the gamestate and perform the move on the copy
@@ -184,10 +188,13 @@ impl ChessGamestate {
     fn update_gamestate(&mut self, performed_move: &ChessMove, move_was_capture: bool) {
         // Unwrap is safe here because (assuming the move calling order was correct) the moved piece must be at the destination
         // TODO: Add an unreachable!() here
-        let moved_piece = self.board.piece_at_mut(performed_move.destination()).unwrap();
-        
+        let moved_piece = self
+            .board
+            .piece_at_mut(performed_move.destination())
+            .unwrap();
+
         moved_piece.increment_move_count();
-        
+
         // Check if a Pawn was moved to determine if the halfmove clock should be reset
         let moved_piece_was_pawn = moved_piece.kind == ChessPieceKind::Pawn;
 
@@ -196,18 +203,21 @@ impl ChessGamestate {
         self.update_king_positions();
 
         self.update_castling_rights();
-        
+
         self.swap_turn_color();
     }
 
     // Performs a "simple move" - a piece is moved from one tile to another, without checking any validity requirements
     // TODO: Refactor to use a function in ChessBoard to set pieces
     fn move_piece(&mut self, requested_move: &ChessMove) -> bool {
-        let move_is_capture = self.board.pieces[requested_move.destination().y()][requested_move.destination().x()].is_some();
+        let move_is_capture = self.board.pieces[requested_move.destination().y()]
+            [requested_move.destination().x()]
+        .is_some();
 
-        self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] = self.board.pieces[requested_move.source().y()][requested_move.source().x()];
+        self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] =
+            self.board.pieces[requested_move.source().y()][requested_move.source().x()];
         self.board.pieces[requested_move.source().y()][requested_move.source().x()] = None;
-    
+
         move_is_capture
     }
 
