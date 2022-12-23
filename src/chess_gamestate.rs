@@ -163,10 +163,11 @@ impl ChessGamestate {
             let mut hypothetical_gamestate = self.clone();
             hypothetical_gamestate.move_piece(queried_move);
 
-            // A full gamestate update is unnecessary here, so the turn color is swapped individually
+            // A full gamestate update is unnecessary here, so the turn color and king positionsare updated individually
             // The color is updated in order to allow the is_check() validation calls to work properly without extra parameters
+            hypothetical_gamestate.update_king_positions();
             hypothetical_gamestate.swap_turn_color();
-            
+
             if hypothetical_gamestate.is_check() {
                 return Err(CannotSelfCheck);
             }
@@ -214,7 +215,7 @@ impl ChessGamestate {
     // This function provides a safer interface for performing a move, as anyone writing
     // external code does not need to worry about the order of the 3 functions
     pub fn perform_move(&mut self, move_to_perform: &ChessMove) -> Result<(), ChessError> {
-        self.validate_move(move_to_perform, true)?;
+        self.validate_move(move_to_perform, false)?;
         let move_was_capture = self.move_piece(move_to_perform);
         self.update_gamestate(move_to_perform, move_was_capture);
 
