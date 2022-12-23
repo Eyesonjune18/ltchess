@@ -74,6 +74,11 @@ impl ChessBoard {
         }
     }
 
+    // Sets a given tile on the board to a given piece (or empties the tile if given None)
+    pub fn set_piece(&mut self, point: &ChessPoint, piece: Option<ChessPiece>) {
+        self.pieces[point.y()][point.x()] = piece;
+    }
+
     // Returns the piece at a given point, if there is one
     // Mutable version is included below
     pub fn piece_at(&self, point: &ChessPoint) -> Option<&ChessPiece> {
@@ -206,15 +211,13 @@ impl ChessGamestate {
     }
 
     // Performs a "simple move" - a piece is moved from one tile to another, without checking any validity requirements
-    // TODO: Refactor to use a function in ChessBoard to set pieces
     fn move_piece(&mut self, requested_move: &ChessMove) -> bool {
-        let move_is_capture = self.board.pieces[requested_move.destination().y()]
-            [requested_move.destination().x()]
-        .is_some();
+        let move_is_capture = self.board.piece_at(requested_move.destination()).is_some();
 
-        self.board.pieces[requested_move.destination().y()][requested_move.destination().x()] =
-            self.board.pieces[requested_move.source().y()][requested_move.source().x()];
-        self.board.pieces[requested_move.source().y()][requested_move.source().x()] = None;
+        let moved_piece = self.board.piece_at(requested_move.source()).copied();
+
+        self.board.set_piece(requested_move.destination(), moved_piece);
+        self.board.set_piece(requested_move.source(), None);
 
         move_is_capture
     }
