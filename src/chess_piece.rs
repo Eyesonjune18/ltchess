@@ -56,11 +56,11 @@ impl ChessPiece {
 
     // Checks whether the piece can move to the given square, based only on its movement patterns
     pub fn can_make_move(&self, queried_move: &ChessMove) -> MovePatternValidity {
-        let change_in_x: u32 =
-            (queried_move.destination().x() as i32 - queried_move.source().x() as i32).abs() as u32;
+        let change_in_x: u8 =
+            (queried_move.destination().x() as i8 - queried_move.source().x() as i8).abs() as u8;
         let change_in_y_unadjusted =
-            queried_move.destination().y() as i32 - queried_move.source().y() as i32;
-        let change_in_y: u32 = change_in_y_unadjusted.abs() as u32;
+            queried_move.destination().y() as i8 - queried_move.source().y() as i8;
+        let change_in_y: u8 = change_in_y_unadjusted.abs() as u8;
         // Y-axis pawn movement rules are inverted for black pawns
         let change_in_y_color_adjusted = match self.color {
             ChessPieceColor::White => change_in_y_unadjusted,
