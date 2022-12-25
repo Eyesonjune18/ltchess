@@ -292,8 +292,19 @@ impl ChessGamestate {
         }
     }
 
+    // Checks if a given move was an en passant move (two-tile Pawn move)
+    fn is_en_passant_move(queried_move: &ChessMove, moved_piece: &ChessPiece) -> bool {
+        todo!();
+    }
+
+    // Checks if a given move was an en passant capture (a Pawn capture-pattern move whose destination is an en passant tile)
+    fn is_en_passant_capture(queried_move: &ChessMove, moved_piece: &ChessPiece, en_passant_tile: &Option<ChessPoint>) -> bool {
+        todo!();
+    }
+
     // Sets the en passant tile of an en passant move
     // Assumes that the move is a valid en passant move
+    // FIXME: Add unreachable statements here
     fn update_for_en_passant_move(&mut self, performed_move: &ChessMove) {
         let moved_pawn = self.board.piece_at(performed_move.destination()).unwrap();
 
