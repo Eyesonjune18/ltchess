@@ -33,6 +33,14 @@ impl ChessMove {
         ChessMove::new(from_point, to_point)
     }
 
+    pub fn change_in_x(&self) -> i8 {
+        (self.destination.x() - self.source.x()) as i8
+    }
+
+    pub fn change_in_y(&self) -> i8 {
+        (self.destination.y() - self.source.y()) as i8
+    }
+
     pub fn source(&self) -> &ChessPoint {
         &self.source
     }
