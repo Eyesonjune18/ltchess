@@ -20,7 +20,7 @@ pub struct ChessGamestate {
     pub black_castle_kingside: bool,
     pub black_castle_queenside: bool,
     // The square where a pawn can be en passant-captured, if there is one
-    pub en_passant: Option<ChessPoint>,
+    pub en_passant_tile: Option<ChessPoint>,
     // Moves since the last capture or pawn move
     pub halfmove_clock: u32,
     // Total number of moves in the game
@@ -102,7 +102,7 @@ impl ChessGamestate {
             white_castle_queenside: true,
             black_castle_kingside: true,
             black_castle_queenside: true,
-            en_passant: None,
+            en_passant_tile: None,
             halfmove_clock: 0,
             fullmove_clock: 0,
         }
@@ -290,6 +290,33 @@ impl ChessGamestate {
         if self.board.piece_at(&ChessPoint::new(0, 7)).is_none() {
             self.black_castle_queenside = false;
         }
+    }
+
+    // Sets the en passant tile of an en passant move
+    // Assumes that the move is a valid en passant move
+    fn update_for_en_passant_move(&mut self, performed_move: &ChessMove) {
+        let moved_pawn = self.board.piece_at(performed_move.destination()).unwrap();
+
+        // Get the y-coordinate of the en passant tile, which is between the move's source and destination
+        let en_passant_tile_y = match moved_pawn.color {
+            ChessPieceColor::White => performed_move.destination().y() + 1,
+            ChessPieceColor::Black => performed_move.destination().y() - 1,
+        };
+
+        // Source or destination would work interchangeably here
+        let en_passant_tile = ChessPoint::new(performed_move.destination().x(), en_passant_tile_y);
+
+        self.en_passant_tile = Some(en_passant_tile);
+    }
+    
+    // Removes the Pawn target of an en passant capture
+    // Assumes that the move is a valid en passant capture
+    fn update_for_en_passant_capture(&mut self, performed_move: &ChessMove) {
+        // When an en passant capture is performed, the captured Pawn is at the same
+        // y-coordinate as the source point, and the same x-coordinate as the destination point
+        let tile_to_clear = ChessPoint::new(performed_move.destination().x(), performed_move.source().y());
+
+        self.board.set_piece(&tile_to_clear, None);
     }
 
     // Increments or resets the move clocks, based on the move that was performed
