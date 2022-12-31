@@ -383,8 +383,8 @@ impl ChessGamestate {
         for row in self.board.pieces.iter().rev() {
             for piece in row.iter() {
                 match piece {
-                    Some(piece) => print!("[{} ]", piece.get_piece_char()),
-                    None => print!("[  ]"),
+                    Some(piece) => print!("[{}]", piece.get_piece_char()),
+                    None => print!("[\u{2001}]"),
                 }
             }
             println!();
