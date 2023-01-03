@@ -130,7 +130,8 @@ impl ChessGamestate {
         let move_is_standard_capture = captured_piece.is_some();
 
         // The move is an en passant capture if it is a pawn move to the en passant tile
-        // TODO: Functionize this
+        // was_en_passant_capture() cannot be used here because it is made to be called after the move rather than before
+        // TODO: Functionize this, or refactor was_en_passant_capture() to allow for both before and after
         let move_is_en_passant_capture = self.en_passant_tile.is_some()
             && moved_piece.kind == ChessPieceKind::Pawn
             && queried_move.destination() == &self.en_passant_tile.unwrap();
