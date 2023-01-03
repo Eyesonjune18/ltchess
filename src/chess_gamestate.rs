@@ -126,7 +126,14 @@ impl ChessGamestate {
         // Because there may not be a captured piece, it must be stored as an Option and unwrapped later
         let captured_piece = self.board.piece_at(&queried_move.destination());
 
-        let move_is_capture = captured_piece.is_some();
+        // The move is a standard capture if there is a piece at the destination
+        let move_is_standard_capture = captured_piece.is_some();
+
+        // The move is an en passant capture if it is a pawn move to the en passant tile
+        // TODO: Functionize this
+        let move_is_en_passant_capture = self.en_passant_tile.is_some()
+            && moved_piece.kind == ChessPieceKind::Pawn
+            && queried_move.destination() == &self.en_passant_tile.unwrap();
 
         // Ensure that the source tile does not contain an enemy piece
         if moved_piece.color != self.turn_color {
@@ -139,7 +146,7 @@ impl ChessGamestate {
 
         // If the move is a capture, check the capture legality instead of the standard move legality
         // This is pretty much entirely because of Pawns, whose capture and standard move patterns are different
-        if !match move_is_capture {
+        if !match move_is_standard_capture || move_is_en_passant_capture {
             true => move_pattern_legality.capture,
             false => move_pattern_legality.standard,
         } {
@@ -159,7 +166,7 @@ impl ChessGamestate {
         }
 
         // Ensure that the captured piece (if there is one) is an enemy piece
-        if move_is_capture {
+        if move_is_standard_capture {
             // Unwrap is safe here because there must be a destination piece for the move to be a capture
             if captured_piece.unwrap().color == self.turn_color {
                 return Err(CannotCaptureFriendly);
@@ -188,18 +195,28 @@ impl ChessGamestate {
     // Updates gamestate variables as necessary before a move is performed
     // This function should be called after validate_move() and move_piece()
     // Because the move has already been performed, the function must be informed of whether or not the
-    // move was a catpture in order to update the halfmove clock correctly
+    // move was a capture in order to update the halfmove clock correctly
     fn update_gamestate(&mut self, performed_move: &ChessMove, move_was_capture: bool) {
         // As long as the move calling order is correct, the piece at the destination will be the moved piece
         let moved_piece = match self.board.piece_at_mut(performed_move.destination()) {
             Some(piece) => piece,
-            None => unreachable!("[INTERNAL ERROR] Moved piece not found at destination after move"),
+            None => {
+                unreachable!("[INTERNAL ERROR] Moved piece not found at destination after move")
+            }
         };
 
         moved_piece.increment_move_count();
 
-        // Check if a Pawn was moved to determine if the halfmove clock should be reset
+        // Check if a Pawn was moved to determine if the halfmove clock should be reset, and if the en passant functions should be called
         let moved_piece_was_pawn = moved_piece.kind == ChessPieceKind::Pawn;
+
+        if moved_piece_was_pawn {
+            self.update_for_en_passant_capture(performed_move);
+            self.update_for_en_passant_move(performed_move);
+        }
+
+        // Only clears the en passant tile if the move did not already set it
+        self.clear_en_passant_tile(performed_move);
 
         self.increment_move_clocks(move_was_capture || moved_piece_was_pawn);
 
@@ -216,7 +233,8 @@ impl ChessGamestate {
 
         let moved_piece = self.board.piece_at(requested_move.source()).copied();
 
-        self.board.set_piece(requested_move.destination(), moved_piece);
+        self.board
+            .set_piece(requested_move.destination(), moved_piece);
         self.board.set_piece(requested_move.source(), None);
 
         move_is_capture
@@ -293,41 +311,80 @@ impl ChessGamestate {
     }
 
     // Checks if a given move was an en passant move (two-tile Pawn move)
-    fn is_en_passant_move(queried_move: &ChessMove, moved_piece: &ChessPiece) -> bool {
-        todo!();
+    fn was_en_passant_move(queried_move: &ChessMove, moved_piece: &ChessPiece) -> bool {
+        moved_piece.kind == ChessPieceKind::Pawn && queried_move.change_in_y().abs() == 2
     }
 
     // Checks if a given move was an en passant capture (a Pawn capture-pattern move whose destination is an en passant tile)
-    fn is_en_passant_capture(queried_move: &ChessMove, moved_piece: &ChessPiece, en_passant_tile: &Option<ChessPoint>) -> bool {
-        todo!();
+    fn was_en_passant_capture(
+        queried_move: &ChessMove,
+        moved_piece: &ChessPiece,
+        en_passant_tile: &Option<ChessPoint>,
+    ) -> bool {
+        en_passant_tile.is_some()
+            && moved_piece.kind == ChessPieceKind::Pawn
+            && queried_move.destination() == &en_passant_tile.unwrap()
     }
 
     // Sets the en passant tile of an en passant move
-    // Assumes that the move is a valid en passant move
-    // FIXME: Add unreachable statements here
     fn update_for_en_passant_move(&mut self, performed_move: &ChessMove) {
-        let moved_pawn = self.board.piece_at(performed_move.destination()).unwrap();
+        let moved_piece = self.board.piece_at(performed_move.destination());
+
+        // Check if the move is a valid en passant move
+        if moved_piece.is_some() && !Self::was_en_passant_move(performed_move, moved_piece.unwrap())
+        {
+            return;
+        }
+
+        // If the move is a valid en passant move, it can be safely assumed that the moved piece is a Pawn
+        let moved_pawn = moved_piece.unwrap();
 
         // Get the y-coordinate of the en passant tile, which is between the move's source and destination
         let en_passant_tile_y = match moved_pawn.color {
-            ChessPieceColor::White => performed_move.destination().y() + 1,
-            ChessPieceColor::Black => performed_move.destination().y() - 1,
+            ChessPieceColor::White => performed_move.destination().y() - 1,
+            ChessPieceColor::Black => performed_move.destination().y() + 1,
         };
 
         // Source or destination would work interchangeably here
-        let en_passant_tile = ChessPoint::new(performed_move.destination().x(), en_passant_tile_y);
-
-        self.en_passant_tile = Some(en_passant_tile);
+        self.en_passant_tile = Some(ChessPoint::new(
+            performed_move.destination().x(),
+            en_passant_tile_y,
+        ));
     }
-    
+
     // Removes the Pawn target of an en passant capture
-    // Assumes that the move is a valid en passant capture
     fn update_for_en_passant_capture(&mut self, performed_move: &ChessMove) {
+        let moved_piece = self.board.piece_at(performed_move.destination());
+
+        // Check if the move is a valid en passant capture
+        if moved_piece.is_some()
+            && !Self::was_en_passant_capture(
+                performed_move,
+                moved_piece.unwrap(),
+                &self.en_passant_tile,
+            )
+        {
+            return;
+        }
+
         // When an en passant capture is performed, the captured Pawn is at the same
         // y-coordinate as the source point, and the same x-coordinate as the destination point
-        let tile_to_clear = ChessPoint::new(performed_move.destination().x(), performed_move.source().y());
+        let tile_to_clear = ChessPoint::new(
+            performed_move.destination().x(),
+            performed_move.source().y(),
+        );
 
         self.board.set_piece(&tile_to_clear, None);
+    }
+
+    // Clears the en passant tile if no en passant move was performed
+    fn clear_en_passant_tile(&mut self, performed_move: &ChessMove) {
+        if !Self::was_en_passant_move(
+            performed_move,
+            &self.board.piece_at(performed_move.destination()).unwrap(),
+        ) {
+            self.en_passant_tile = None;
+        }
     }
 
     // Increments or resets the move clocks, based on the move that was performed
@@ -380,6 +437,7 @@ impl ChessGamestate {
 
     // TODO: Probably move this to UI
     pub fn print_board(&self) {
+        println!("{:?}", self.en_passant_tile);
         for row in self.board.pieces.iter().rev() {
             for piece in row.iter() {
                 match piece {
