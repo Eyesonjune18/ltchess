@@ -68,11 +68,7 @@ impl ChessGamestate {
         let move_is_standard_capture = captured_piece.is_some();
 
         // The move is an en passant capture if it is a pawn move to the en passant tile
-        // was_en_passant_capture() cannot be used here because it is made to be called after the move rather than before
-        // TODO: Functionize this, or refactor was_en_passant_capture() to allow for both before and after
-        let move_is_en_passant_capture = self.en_passant_tile.is_some()
-            && moved_piece.kind == ChessPieceKind::Pawn
-            && queried_move.destination() == &self.en_passant_tile.unwrap();
+        let move_is_en_passant_capture = Self::is_en_passant_capture(queried_move, moved_piece, &self.en_passant_tile);
 
         // Ensure that the source tile does not contain an enemy piece
         if moved_piece.color != self.turn_color {
@@ -254,7 +250,8 @@ impl ChessGamestate {
         moved_piece.kind == ChessPieceKind::Pawn && queried_move.change_in_y().abs() == 2
     }
 
-    // Checks if a given move was an en passant capture (a Pawn capture-pattern move whose destination is an en passant tile)
+    // Checks if a given move was an en passant capture (a Pawn capture-pattern move whose destination was an en passant tile)
+    // This is used to check a move that has already been performed
     fn was_en_passant_capture(
         queried_move: &ChessMove,
         moved_piece: &ChessPiece,
@@ -263,6 +260,20 @@ impl ChessGamestate {
         en_passant_tile.is_some()
             && moved_piece.kind == ChessPieceKind::Pawn
             && queried_move.destination() == &en_passant_tile.unwrap()
+    }
+
+    // Checks if a given move is an en passant capture
+    // This is used to check a move that has not yet been performed
+    // TODO: Maybe this should be merged with was_en_passant_capture() with an added parameter,
+    // with "is_" and "was_" being overloads for a generic function
+    fn is_en_passant_capture(
+        queried_move: &ChessMove,
+        moved_piece: &ChessPiece,
+        en_passant_tile: &Option<ChessPoint>,
+    ) -> bool {
+        en_passant_tile.is_some()
+            && moved_piece.kind == ChessPieceKind::Pawn
+            && queried_move.destination().x() == en_passant_tile.unwrap().x()
     }
 
     // Sets the en passant tile of an en passant move
