@@ -1,9 +1,11 @@
+mod chess_board;
 mod chess_error;
 mod chess_gamestate;
 mod chess_move;
 mod chess_piece;
 mod chess_point;
 
+pub use chess_board::ChessBoard;
 pub use chess_error::ChessError;
 pub use chess_gamestate::ChessGamestate;
 pub use chess_move::ChessMove;
