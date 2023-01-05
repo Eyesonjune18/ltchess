@@ -251,21 +251,7 @@ impl ChessGamestate {
     }
 
     // Checks if a given move was an en passant capture (a Pawn capture-pattern move whose destination was an en passant tile)
-    // This is used to check a move that has already been performed
-    fn was_en_passant_capture(
-        queried_move: &ChessMove,
-        moved_piece: &ChessPiece,
-        en_passant_tile: &Option<ChessPoint>,
-    ) -> bool {
-        en_passant_tile.is_some()
-            && moved_piece.kind == ChessPieceKind::Pawn
-            && queried_move.destination() == &en_passant_tile.unwrap()
-    }
-
-    // Checks if a given move is an en passant capture
-    // This is used to check a move that has not yet been performed
-    // TODO: Maybe this should be merged with was_en_passant_capture() with an added parameter,
-    // with "is_" and "was_" being overloads for a generic function
+    // This can be used to check moves that have been performed, as well as those that have not
     fn is_en_passant_capture(
         queried_move: &ChessMove,
         moved_piece: &ChessPiece,
@@ -273,7 +259,7 @@ impl ChessGamestate {
     ) -> bool {
         en_passant_tile.is_some()
             && moved_piece.kind == ChessPieceKind::Pawn
-            && queried_move.destination().x() == en_passant_tile.unwrap().x()
+            && queried_move.destination() == &en_passant_tile.unwrap()
     }
 
     // Sets the en passant tile of an en passant move
@@ -308,7 +294,7 @@ impl ChessGamestate {
 
         // Check if the move is a valid en passant capture
         if moved_piece.is_some()
-            && !Self::was_en_passant_capture(
+            && !Self::is_en_passant_capture(
                 performed_move,
                 moved_piece.unwrap(),
                 &self.en_passant_tile,
@@ -387,7 +373,6 @@ impl ChessGamestate {
 
     // TODO: Probably move this to UI
     pub fn print_board(&self) {
-        // println!("{:?}", self.en_passant_tile);
         for row in self.board.pieces.iter().rev() {
             for piece in row.iter() {
                 match piece {

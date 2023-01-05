@@ -16,7 +16,7 @@ impl ChessPoint {
         ChessPoint { x, y }
     }
 
-    // Parse a point from an algebraic position string, like "e2"
+    // Parse a point from a tile position string, like "e2"
     pub fn from(encoded_point: &str) -> Self {
         let mut chars = encoded_point.chars();
 

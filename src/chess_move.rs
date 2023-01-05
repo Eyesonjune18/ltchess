@@ -19,7 +19,7 @@ impl ChessMove {
         }
     }
 
-    // Parse a move from a combined algebraic position string, like "e2 e4"
+    // Parse a move from a combined tile position string, like "e2 e4"
     pub fn from(encoded_move: &str) -> Self {
         // TODO: Make sure there are only 2 substrings
         let mut substrings = encoded_move.split_whitespace();
